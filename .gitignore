@@ -1,5 +1,54 @@
 node_modules
 .env
+.env.local
+server/.env
+client/.env
 
 **/.env
+**/.env.local
 **/node_modules/
+client/dist/
+server/dist/
+uploads/
+# Environment & Secrets
+.env
+.env.*
+*.env
+server/.env
+client/.env
+client/.env.*
+!.env.example
+!server/.env.example
+!client/.env.example
+
+# TLS / Certificates
+*.pem
+*.key
+*.crt
+*.cert
+nginx/certs/*
+!nginx/certs/.gitkeep
+
+# Dependencies
+node_modules/
+server/node_modules/
+client/node_modules/
+
+# Build Outputs
+dist/
+server/dist/
+client/dist/
+build/
+*.tsbuildinfo
+
+# Local Database & Storage
+mongo-data/
+redis-data/
+*.dump
+*.rdb
+
+# Logs & System
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db

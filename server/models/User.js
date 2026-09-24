@@ -84,6 +84,26 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  // New account-level fields shared with the typed credit/matching contracts.
+  reputationScore: {
+    type: Number,
+    min: 0,
+    max: 5,
+    default: 5
+  },
+  ratingCount: {
+    type: Number,
+    min: 0,
+    default: 0
+  },
+  wallet: {
+    availableCredits: { type: Number, min: 0, default: 2 },
+    lockedCredits: { type: Number, min: 0, default: 0 }
+  },
+  availableSlots: {
+    type: [{ type: Number, min: 0, max: 167, validate: Number.isInteger }],
+    default: []
+  },
   // New: Array of individual ratings (like commercial platforms)
   ratings: [{
     reviewer: {
@@ -225,11 +245,7 @@ userSchema.virtual('ratingAverage').get(function() {
   return sum / this.ratings.length;
 });
 
-userSchema.virtual('ratingCount').get(function() {
-  return this.ratings ? this.ratings.length : 0;
-});
-
 userSchema.set('toObject', { virtuals: true });
 userSchema.set('toJSON', { virtuals: true });
 
-module.exports = mongoose.model('User', userSchema); 
+module.exports = mongoose.model('User', userSchema);

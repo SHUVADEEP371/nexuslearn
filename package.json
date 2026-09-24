@@ -1,24 +1,25 @@
 {
-  "name": "skill-swap-platform",
+  "name": "nexuslearn",
   "version": "1.0.0",
-  "description": "A platform for users to exchange skills with each other",
-  "main": "server/index.js",
+  "description": "Collaborative peer learning platform with live AI-assisted sessions",
+  "main": "server/dist/index.js",
   "scripts": {
     "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "server": "cd server && npm run dev",
-    "client": "cd client && npm start",
-    "build": "cd client && npm run build",
+    "server": "npm --prefix server run dev",
+    "client": "npm --prefix client run dev",
+    "build": "npm --prefix client run build",
     "install-all": "npm install && cd server && npm install && cd ../client && npm install",
-    "start": "cd server && npm start",
+    "start": "npm --prefix server start",
+    "migrate:database": "npm --prefix server run migrate:database",
     "setup": "node setup.js"
   },
   "keywords": [
-    "skill-swap",
+    "nexuslearn",
     "exchange",
     "learning",
     "community"
   ],
-  "author": "Skill Swap Team",
+  "author": "NexusLearn Team",
   "license": "MIT",
   "devDependencies": {
     "concurrently": "^8.2.2"

@@ -2,7 +2,7 @@ const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-console.log('🚀 Setting up Skill Swap Platform...\n');
+console.log('🚀 Setting up NexusLearn...\n');
 
 // Check if Node.js is installed
 try {
@@ -47,7 +47,7 @@ try {
 const envPath = path.join(__dirname, 'server', '.env');
 if (!fs.existsSync(envPath)) {
   console.log('\n🔧 Creating .env file...');
-  const envContent = `MONGODB_URI=mongodb://localhost:27017/skillswap
+  const envContent = `MONGODB_URI=mongodb://127.0.0.1:27017/nexuslearn?replicaSet=rs0
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
 PORT=5000
 NODE_ENV=development`;

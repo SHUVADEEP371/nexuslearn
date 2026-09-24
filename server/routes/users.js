@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -8,6 +8,10 @@ const auth = require('../middleware/auth');
 const { requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
+
+// Escape query text before using it as a MongoDB regular expression.
+const regexMetacharacters = new Set(['.', '*', '+', '?', '^', '$', '{', '}', '(', ')', '|', '[', ']', '\\']);
+const escapeRegex = (value) => Array.from(String(value), (character) => regexMetacharacters.has(character) ? '\\' + character : character).join('');
 
 // Configure multer for file uploads
 const storage = multer.diskStorage({
@@ -58,24 +62,31 @@ router.get('/all', auth, requireAdmin, async (req, res) => {
 router.get('/browse', async (req, res) => {
   try {
     const { skill, location, availability } = req.query;
+    if ([skill, location].some((value) => value !== undefined && (typeof value !== 'string' || value.length > 80))) {
+      return res.status(400).json({ message: 'Search filters must be 80 characters or fewer' });
+    }
     let query = { isPublic: true };
 
     // Filter by skill
     if (skill) {
       query.$or = [
-        { 'skillsOffered.name': { $regex: skill, $options: 'i' } },
-        { 'skillsWanted.name': { $regex: skill, $options: 'i' } }
+        { 'skillsOffered.name': { $regex: escapeRegex(skill), $options: 'i' } },
+        { 'skillsWanted.name': { $regex: escapeRegex(skill), $options: 'i' } }
       ];
     }
 
     // Filter by location
     if (location) {
-      query.location = { $regex: location, $options: 'i' };
+      query.location = { $regex: escapeRegex(location), $options: 'i' };
     }
 
     // Filter by availability
     if (availability) {
       const availabilityFilters = availability.split(',');
+      const allowedAvailability = new Set(['weekdays', 'weekends', 'evenings', 'mornings']);
+      if (availabilityFilters.some((item) => !allowedAvailability.has(item))) {
+        return res.status(400).json({ message: 'Invalid availability filter' });
+      }
       const availabilityQuery = {};
       availabilityFilters.forEach(avail => {
         availabilityQuery[`availability.${avail}`] = true;
@@ -122,12 +133,15 @@ router.get('/search', async (req, res) => {
     if (!q) {
       return res.status(400).json({ message: 'Search query is required' });
     }
+    if (typeof q !== 'string' || q.length > 80) {
+      return res.status(400).json({ message: 'Search query must be 80 characters or fewer' });
+    }
     const users = await User.find({
       isPublic: true,
       $or: [
-        { 'skillsOffered.name': { $regex: q, $options: 'i' } },
-        { 'skillsWanted.name': { $regex: q, $options: 'i' } },
-        { name: { $regex: q, $options: 'i' } }
+        { 'skillsOffered.name': { $regex: escapeRegex(q), $options: 'i' } },
+        { 'skillsWanted.name': { $regex: escapeRegex(q), $options: 'i' } },
+        { name: { $regex: escapeRegex(q), $options: 'i' } }
       ]
     })
       .select('-password -email')

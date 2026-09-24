@@ -15,9 +15,10 @@ const auth = async (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
     // Handle admin user case
-    if (decoded.userId === 'admin' && decoded.isAdmin) {
+    // Legacy seven-day admin tokens used the string "admin" and are intentionally rejected.
+    if (decoded.isAdmin && decoded.userId === '000000000000000000000001') {
       req.user = {
-        _id: 'admin',
+        _id: decoded.userId,
         name: 'Admin',
         email: process.env.ADMIN_ID,
         isAdmin: true,

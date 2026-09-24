@@ -1,6 +1,6 @@
 {
-  "short_name": "SkillSwap",
-  "name": "SkillSwap Platform",
+  "short_name": "NexusLearn",
+  "name": "NexusLearn — Learn together",
   "icons": [
     {
       "src": "favicon.ico",
@@ -10,6 +10,6 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#6d4aff",
-  "background_color": "#f6f6fa"
+  "theme_color": "#23372c",
+  "background_color": "#faf9f6"
 } 

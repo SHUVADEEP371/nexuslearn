@@ -1,199 +1,260 @@
-# Skill Swap Platform
+# NexusLearn
 
-**Team Name:** Team 1274
-**Selected Problem Statement:** Skill Swap Platform
+**Real-Time Collaborative Peer-to-Peer Learning & AI-Powered Study Platform**
 
-A modern web application that enables users to exchange skills with each other. Users can list their skills, search for others with specific skills, and request skill swaps in return.
+NexusLearn helps people teach skills, find learning partners, schedule sessions, and collaborate in a shared workspace with chat, notes, and Gemini-powered study aids.
+
+![TypeScript](https://img.shields.io/badge/TypeScript-5.7.3%2B-3178C6?logo=typescript&logoColor=white)
+![React](https://img.shields.io/badge/React-18.2.0%2B-61DAFB?logo=react&logoColor=black)
+![Vite](https://img.shields.io/badge/Vite-6.1.0%2B-646CFF?logo=vite&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-runtime-339933?logo=nodedotjs&logoColor=white)
+![Express](https://img.shields.io/badge/Express-4-000000?logo=express&logoColor=white)
+![MongoDB Atlas](https://img.shields.io/badge/MongoDB-Atlas-47A248?logo=mongodb&logoColor=white)
+![Upstash Redis](https://img.shields.io/badge/Upstash-Redis-00E9A3?logo=redis&logoColor=black)
+![Google Gemini AI](https://img.shields.io/badge/Google-Gemini%202.5%20Flash-8E75B2?logo=googlegemini&logoColor=white)
+![Socket.IO](https://img.shields.io/badge/Socket.IO-4-010101?logo=socketdotio&logoColor=white)
+
+**Live app (Vercel):** Not deployed or configured in this repository.
+
+**API health (Render):** Not deployed or configured in this repository. When deployed, use the public API `/health` endpoint.
+
+## Contents
+
+- [Features](#features)
+- [Architecture](#architecture)
+- [Requirements](#requirements)
+- [Environment configuration](#environment-configuration)
+- [Local development](#local-development)
+- [Docker Compose](#docker-compose)
+- [Production deployment](#production-deployment)
+- [API and real-time overview](#api-and-real-time-overview)
+- [Security and operational notes](#security-and-operational-notes)
+- [Repository structure](#repository-structure)
+- [Known limitations](#known-limitations)
 
 ## Features
 
-### User Management
-- **User Registration & Authentication**: Secure JWT-based authentication
-- **Profile Management**: Users can create and edit their profiles
-- **Profile Photos**: Optional profile photo uploads
-- **Privacy Settings**: Users can make their profiles public or private
+- **Peer skill exchange:** Create profiles, publish skills offered and wanted, discover peers, and propose or manage exchanges.
+- **Reciprocal matching:** Rank candidates by mutually offered/wanted skills, reputation, and configured weekly availability overlap.
+- **Session scheduling and credits:** Schedule accepted exchanges, prevent overlapping sessions, and hold/release internal Skill Credits with MongoDB transactions. Paid sessions can use Razorpay when configured.
+- **Real-time collaboration:** Authenticated Socket.IO rooms support persistent chat, revision-aware shared Markdown notes, WebRTC call signaling, and low-latency room updates. The notes workspace is collaborative; a separate whiteboard is not currently implemented.
+- **Gemini 2.5 Flash study aids:** Configure `GEMINI_MODEL=gemini-2.5-flash` for syllabus generation, contextual note extraction, and post-session feedback. Calls are validated, bounded with retries, and limited to 10 requests per authenticated user (or client IP) per 15-minute window.
+- **Redis-backed throttling:** `ioredis` accepts TLS `rediss://` URLs, including Upstash. Shared Redis rate limits fail open if Redis is unavailable so API requests continue.
+- **Operational health and shutdown:** Public `GET /health` is outside auth and rate limiting. The server trusts one reverse proxy hop and gracefully drains HTTP/Socket.IO, Redis, and MongoDB on termination signals and fatal process errors.
 
-### Skill Management
-- **Skills Offered**: Users can list skills they can teach
-- **Skills Wanted**: Users can list skills they want to learn
-- **Skill Details**: Each skill includes description and proficiency/priority levels
-- **Availability**: Users can specify when they're available (weekdays, weekends, evenings, mornings)
+## Architecture
 
-### Search & Discovery
-- **Browse Users**: View all public profiles
-- **Skill Search**: Search users by specific skills
-- **Location Filtering**: Filter users by location
-- **Availability Filtering**: Filter by availability preferences
+| Area | Technologies and responsibility |
+| --- | --- |
+| Frontend | React 18, Vite, TypeScript for newer modules, JavaScript/JSX legacy screens, Tailwind CSS, React Router, Lucide icons |
+| Client data and transport | Axios, TanStack Query provider, Socket.IO client, WebRTC browser APIs |
+| Backend | Node.js 22, Express 4, TypeScript feature modules with controllers, services, repositories, middleware, and Socket.IO handlers; legacy JavaScript routes remain for compatibility |
+| Database | MongoDB/Mongoose; replica-set transactions for session/credit/payment operations |
+| In-memory store | Redis via ioredis; shared rate-limit storage and Socket.IO Redis adapter; optional for one local API process |
+| AI services | Google GenAI SDK, configurable Gemini model, LangChain prompt utilities, Zod validation |
+| Local infrastructure | Docker Compose, MongoDB replica set, Redis, two API instances, Nginx gateway, static client container |
+| Cloud hosting | API can run on Render; static Vite frontend can run on Vercel; MongoDB Atlas and Upstash Redis can provide managed data services |
 
-### Swap Management
-- **Request Swaps**: Send skill exchange requests to other users
-- **Accept/Reject**: Recipients can accept or reject swap requests
-- **Cancel Requests**: Requesters can cancel pending requests
-- **Complete Swaps**: Mark swaps as completed after exchange
-- **Swap History**: View all past and current swaps
+This is an incremental migration from a JavaScript MVP. The typed backend lives in `server/src/`; existing JavaScript route and model modules under `server/routes/` and `server/models/` still serve core profile, swap, and review functionality. The frontend also retains JavaScript pages alongside typed components.
 
-### Rating System
-- **Post-Swap Ratings**: Rate completed swaps (1-5 stars)
-- **Comments**: Add feedback comments to ratings
-- **User Ratings**: Build reputation through ratings
-- **Average Ratings**: Display user's average rating
+## Requirements
 
-## Tech Stack
+- Node.js 22 or newer and npm
+- MongoDB replica set for transaction-backed sessions, credit ledger, and payments
+- Redis for shared rate limiting and multi-instance Socket.IO (optional for a single local API process)
+- Docker Desktop or Docker Engine with the Compose plugin (optional)
+- Gemini API key for AI features
 
-### Backend
-- **Node.js** with Express.js
-- **MongoDB** with Mongoose ODM
-- **JWT** for authentication
-- **bcryptjs** for password hashing
-- **multer** for file uploads
-- **express-validator** for input validation
-- **helmet** for security headers
-- **express-rate-limit** for rate limiting
+## Environment configuration
 
-### Frontend
-- **React.js** with functional components and hooks
-- **React Router** for navigation
-- **Axios** for API calls
-- **React Hook Form** for form management
-- **React Hot Toast** for notifications
-- **Lucide React** for icons
-- **Tailwind CSS** for styling
+Copy `server/.env.example` to `server/.env` and `client/.env.example` to `client/.env.local` for local configuration. Keep all credentials server-side and out of version control. The ignore rules exclude root and nested `.env` and `.env.local` files.
 
-## Project Structure
+### Server: `server/.env.example`
 
+```dotenv
+PORT=5000
+NODE_ENV=development
+MONGODB_URI=mongodb://127.0.0.1:27017/nexuslearn?replicaSet=rs0
+JWT_SECRET=
+CORS_ORIGINS=http://localhost:3000
+COOKIE_SECURE=false
+REDIS_URL=redis://localhost:6379
+GEMINI_API_KEY=
+GEMINI_MODEL=gemini-2.5-flash
+SESSION_PRICE_INR_PER_HOUR=0
+RAZORPAY_KEY_ID=
+RAZORPAY_KEY_SECRET=
+TURN_SERVER_URL=
+TURN_USERNAME=
+TURN_CREDENTIAL=
+ADMIN_ID=
+ADMIN_PASS=
 ```
-skillswap/
-├── server/                 # Backend API
-│   ├── models/            # MongoDB schemas
-│   ├── routes/            # API routes
-│   ├── middleware/        # Custom middleware
-│   ├── uploads/           # File uploads
-│   └── index.js           # Server entry point
-├── client/                # Frontend React app
-│   ├── src/
-│   │   ├── components/    # Reusable components
-│   │   ├── pages/         # Page components
-│   │   ├── contexts/      # React contexts
-│   │   └── index.js       # App entry point
-│   └── public/            # Static files
+
+`MONGODB_URI` and `JWT_SECRET` are required by the API. Use a MongoDB replica-set URI for features that use transactions. `REDIS_URL` is optional for a single process; use a `rediss://` URL for TLS-enabled hosted Redis. AI, payment, TURN, and legacy admin settings are optional. Use long random production secrets and rotate credentials if exposed.
+
+### Client: `client/.env.example` (copy to `.env.local`)
+
+```dotenv
+VITE_API_URL=http://localhost:5000/api
+VITE_SOCKET_URL=http://localhost:5000
+```
+
+For local Vite development, these may be omitted: `/api` is proxied to the local server, and the socket client defaults to the current origin. In production, set them to the deployed API origin and base path. `VITE_` values are embedded in browser assets; never put secrets in them.
+
+## Local development
+
+### PowerShell
+
+From the repository root:
+
+```powershell
+npm install
+npm --prefix server ci
+npm --prefix client ci
+Copy-Item server/.env.example server/.env
+docker compose up -d database redis
+npm run dev
+```
+
+### Bash
+
+From the repository root:
+
+```bash
+npm install
+npm --prefix server ci
+npm --prefix client ci
+cp server/.env.example server/.env
+docker compose up -d database redis
+npm run dev
+```
+
+Set a strong `JWT_SECRET` in `server/.env`; add `GEMINI_API_KEY` to enable AI generation. `npm run dev` starts the API in watch mode and the Vite client. The client is available at `http://localhost:3000`, the API at `http://localhost:5000`, and the public health endpoint at `http://localhost:5000/health`.
+
+The local MongoDB container initializes a single-node replica set needed by transactional features. Redis is optional for local single-process operation, but is required to exercise shared rate limits and cross-process Socket.IO behavior.
+
+### Build commands
+
+```powershell
+npm --prefix server run build
+npm --prefix client run build
+```
+
+The server build emits `server/dist`; the client build emits `client/dist`.
+
+## Docker Compose
+
+After configuring `server/.env`, run:
+
+```bash
+docker compose up --build
+```
+
+The Compose stack includes MongoDB 7 as a single-node replica set, Redis 7, two API instances, a static Vite client, and an Nginx gateway. Open `http://localhost`. Named MongoDB and Redis volumes persist data across container restarts. `docker compose down -v` deletes those volumes and their data.
+
+The default gateway uses local HTTP configuration. For HTTPS, configure the TLS Nginx file and certificates under `nginx/certs`, set the Compose `NGINX_CONFIG` value to `./nginx/nginx.conf`, and enable secure cookies. Set `CORS_ORIGINS` to the actual frontend origin(s).
+
+## Production deployment
+
+### Render: API
+
+Create a Render **Web Service** connected to the repository:
+
+1. Set **Root Directory** to `server`.
+2. Set **Build Command** to `npm ci && npm run build`.
+3. Set **Start Command** to `npm start`.
+4. Set **Health Check Path** to `/health`.
+5. Add the environment variables below. Render supplies `PORT`; the API binds to it.
+
+Required and commonly used Render variables:
+
+| Name | Value |
+| --- | --- |
+| `NODE_ENV` | `production` |
+| `MONGODB_URI` | MongoDB Atlas connection string with replica-set support |
+| `JWT_SECRET` | Long, unique random value |
+| `CORS_ORIGINS` | Exact Vercel origin(s), comma-separated, no path components |
+| `COOKIE_SECURE` | `true` |
+| `REDIS_URL` | Upstash Redis TLS connection string beginning with `rediss://` |
+| `GEMINI_API_KEY` | Gemini API key, if AI features are enabled |
+| `GEMINI_MODEL` | `gemini-2.5-flash` |
+
+Add optional Razorpay credentials, `SESSION_PRICE_INR_PER_HOUR`, or TURN server credentials only when using those features. Do not copy secret values into the README or Vercel client settings.
+
+Render can monitor `/health` using its health check path. For an external availability check, configure a cron-job.org HTTP GET monitor for the service's public `/health` URL at a 10-minute interval. The endpoint reports process health; periodic external requests are not a guarantee against platform cold starts or instance suspension.
+
+### Vercel: frontend
+
+1. Import the same repository into Vercel.
+2. Set **Root Directory** to `client`.
+3. Use `npm run build` as the build command and `dist` as the output directory.
+4. Set these Vercel environment variables for each environment (Production and Preview as needed):
+
+   | Name | Value |
+   | --- | --- |
+   | `VITE_API_URL` | The Render API origin followed by `/api` |
+   | `VITE_SOCKET_URL` | The Render API origin |
+
+5. Add each deployed Vercel site origin to Render's comma-separated `CORS_ORIGINS` and redeploy the API after changing it.
+
+Deploy previews use distinct origins; allow only the intended preview domain(s). Do not expose server credentials in any `VITE_` variable. After changing Vercel environment variables, create a new deployment so the Vite build embeds the updated values.
+
+## API and real-time overview
+
+All HTTP API routes use the `/api` prefix except `GET /health`.
+
+| Route | Purpose |
+| --- | --- |
+| `GET /health` | Public lightweight health probe; returns status, process uptime, and an ISO timestamp. It is mounted before auth and global rate limiting. |
+| `/api/auth` | Member registration, login, refresh, logout, and current-user routes |
+| `/api/users` | User profiles, search, profile updates, skills, and reviews |
+| `/api/swaps` | Exchange proposals and their state transitions |
+| `/api/sessions` | Session scheduling, reading, completion, and session logistics |
+| `/api/matching` | Automatic and user-specific reciprocal skill matching |
+| `/api/ai` | Session notes, post-session feedback, and syllabus generation |
+| `/api/payments` | Optional paid-session checkout and verification |
+
+Session Socket.IO rooms persist chat messages and shared notes, broadcast note revisions and AI note chunks, and relay WebRTC signaling. Calls use peer-to-peer media with STUN by default; production networks may require a configured TURN relay. AI endpoints require session authorization and apply a per-user/IP 10-request/15-minute limit.
+
+## Security and operational notes
+
+- Configure `CORS_ORIGINS` as an explicit comma-separated origin allow-list. The server normalizes whitespace and trailing slashes and enables credentials.
+- `app.set('trust proxy', 1)` supports the Render/Nginx proxy chain and client IP detection; deploy only behind the expected single proxy hop.
+- Refresh credentials are stored hashed and transported in an HttpOnly cookie. Enable `COOKIE_SECURE=true` when serving over HTTPS.
+- Redis-backed HTTP throttles use fail-open behavior if Redis is temporarily unavailable. This preserves availability, while rate limiting is temporarily less effective during an outage.
+- Fatal process errors and termination signals initiate graceful shutdown of HTTP/Socket.IO, Redis, and MongoDB connections.
+- Profile media currently uses the existing upload handling; managed object storage and malware scanning are not configured here.
+- Back up MongoDB, rotate secrets, use HTTPS, monitor logs and service health, and validate production CORS and cookie behavior before public launch.
+
+## Repository structure
+
+```text
+.
+├── client/
+│   ├── src/components/       # Shared UI and live session workspace
+│   ├── src/pages/            # React application screens
+│   ├── src/contexts/         # Client auth context
+│   ├── src/config/           # API client configuration
+│   └── vite.config.ts
+├── server/
+│   ├── src/                  # Typed API, AI, session, and realtime modules
+│   │   ├── ai/ controllers/ infra/ middleware/ models/
+│   │   ├── realtime/ repositories/ routes/ services/
+│   ├── routes/               # Legacy JavaScript Express routes
+│   ├── models/               # Legacy JavaScript Mongoose models
+│   └── scripts/              # Database migration utilities
+├── nginx/                    # Development and TLS gateway configuration
+├── docs/                     # Architecture and upgrade documentation
+├── docker-compose.yml
 └── README.md
 ```
 
-## Getting Started
+## Known limitations
 
-### Prerequisites
-- Node.js (v14 or higher)
-- MongoDB (local or cloud instance)
-- npm or yarn
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd skillswap
-   ```
-
-2. **Install dependencies**
-   ```bash
-   # Install root dependencies
-   npm install
-   
-   # Install backend dependencies
-   cd server
-   npm install
-   
-   # Install frontend dependencies
-   cd ../client
-   npm install
-   ```
-
-3. **Environment Setup**
-   
-   Copy the template file and customize it with your settings:
-   ```bash
-   cd server
-   cp .env-template .env
-   ```
-   
-   Then edit the `.env` file with your MongoDB Atlas connection string:
-   ```env
-   MONGODB_URI=mongodb+srv://your-username:your-password@your-cluster.mongodb.net/skillswap?retryWrites=true&w=majority
-   JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
-   PORT=5000
-   NODE_ENV=development
-   ```
-
-4. **Start MongoDB**
-   
-   Make sure MongoDB is running on your system or use a cloud instance.
-
-5. **Run the application**
-   
-   From the root directory:
-   ```bash
-   # Start both frontend and backend
-   npm run dev
-   
-   # Or start them separately:
-   npm run server  # Backend on port 5000
-   npm run client  # Frontend on port 3000
-   ```
-
-### Development Scripts
-
-- `npm run dev` - Start both frontend and backend in development mode
-- `npm run server` - Start only the backend server
-- `npm run client` - Start only the frontend development server
-- `npm run build` - Build the frontend for production
-- `npm run install-all` - Install dependencies for all packages
-
-## API Endpoints
-
-### Authentication
-- `POST /api/auth/register` - Register a new user
-- `POST /api/auth/login` - Login user
-- `GET /api/auth/me` - Get current user
-
-### Users
-- `GET /api/users/browse` - Browse public users
-- `GET /api/users/search` - Search users by skills
-- `GET /api/users/:id` - Get user profile
-- `PUT /api/users/profile` - Update user profile
-- `POST /api/users/profile-photo` - Upload profile photo
-- `POST /api/users/skills-offered` - Add skill offered
-- `POST /api/users/skills-wanted` - Add skill wanted
-- `DELETE /api/users/skills-offered/:id` - Remove skill offered
-- `DELETE /api/users/skills-wanted/:id` - Remove skill wanted
-
-### Swaps
-- `POST /api/swaps` - Create swap request
-- `GET /api/swaps/my-swaps` - Get user's swaps
-- `GET /api/swaps/:id` - Get swap details
-- `PUT /api/swaps/:id/accept` - Accept swap request
-- `PUT /api/swaps/:id/reject` - Reject swap request
-- `PUT /api/swaps/:id/complete` - Complete swap
-- `PUT /api/swaps/:id/cancel` - Cancel swap request
-- `POST /api/swaps/:id/rate` - Rate completed swap
-
-### Skills
-- `GET /api/skills/popular` - Get popular skills
-- `GET /api/skills/suggestions` - Get skill suggestions
-
-## Usage
-
-1. **Register/Login**: Create an account or sign in
-2. **Complete Profile**: Add your skills, availability, and bio
-3. **Browse Users**: Search for people with skills you want to learn
-4. **Request Swaps**: Send skill exchange requests
-5. **Manage Requests**: Accept, reject, or cancel swap requests
-6. **Complete Swaps**: Mark swaps as completed after exchange
-7. **Rate & Review**: Provide feedback after completing swaps
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request 
+- The codebase remains a mixed TypeScript/JavaScript migration; not every legacy route uses the typed layered modules.
+- Availability is based on a weekly UTC hour grid; a full recurring calendar and date-specific override interface is not implemented.
+- External Google/Outlook calendar synchronization is not implemented. Session `.ics` export is available.
+- WebRTC uses STUN by default; reliable connectivity across restrictive networks requires a TURN service.
+- The collaboration workspace provides persistent chat and shared notes; a separate shared whiteboard is not implemented.
+- Deployment URLs are not configured in this repository. Add the deployed Vercel and Render links above after publishing the services.

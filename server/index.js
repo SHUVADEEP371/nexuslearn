@@ -42,7 +42,7 @@ app.use('/api/skills', skillRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Skill Swap Platform API is running' });
+  res.json({ status: 'OK', message: 'NexusLearn API is running' });
 });
 
 // Error handling middleware
@@ -57,7 +57,7 @@ app.use('*', (req, res) => {
 });
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/skillswap')
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/nexuslearn?replicaSet=rs0')
 .then(() => {
   console.log('Connected to MongoDB');
   app.listen(PORT, () => {

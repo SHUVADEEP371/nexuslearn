@@ -20,6 +20,11 @@ const swapSchema = new mongoose.Schema({
     description: {
       type: String,
       trim: true
+    },
+    proficiency: {
+      type: String,
+      enum: ['Beginner', 'Intermediate', 'Advanced', 'Expert'],
+      default: 'Intermediate'
     }
   },
   offeredSkill: {
@@ -31,6 +36,11 @@ const swapSchema = new mongoose.Schema({
     description: {
       type: String,
       trim: true
+    },
+    proficiency: {
+      type: String,
+      enum: ['Beginner', 'Intermediate', 'Advanced', 'Expert'],
+      default: 'Intermediate'
     }
   },
   status: {

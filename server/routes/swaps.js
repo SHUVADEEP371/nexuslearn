@@ -32,21 +32,21 @@ router.post('/', auth, [
     }
 
     // Check if recipient has the requested skill
-    const hasRequestedSkill = recipient.skillsOffered.some(skill => 
+    const requestedSkillRecord = recipient.skillsOffered.find(skill =>
       skill.name.toLowerCase() === requestedSkill.name.toLowerCase()
     );
 
-    if (!hasRequestedSkill) {
+    if (!requestedSkillRecord) {
       return res.status(400).json({ message: 'Recipient does not offer this skill' });
     }
 
     // Check if requester has the offered skill
     const requester = await User.findById(req.user._id);
-    const hasOfferedSkill = requester.skillsOffered.some(skill => 
+    const offeredSkillRecord = requester.skillsOffered.find(skill =>
       skill.name.toLowerCase() === offeredSkill.name.toLowerCase()
     );
 
-    if (!hasOfferedSkill) {
+    if (!offeredSkillRecord) {
       return res.status(400).json({ message: 'You do not offer this skill' });
     }
 
@@ -67,8 +67,8 @@ router.post('/', auth, [
     const swap = new Swap({
       requester: req.user._id,
       recipient: recipientId,
-      requestedSkill,
-      offeredSkill,
+      requestedSkill: { name: requestedSkillRecord.name, description: requestedSkillRecord.description, proficiency: requestedSkillRecord.proficiency },
+      offeredSkill: { name: offeredSkillRecord.name, description: offeredSkillRecord.description, proficiency: offeredSkillRecord.proficiency },
       message,
       scheduledDate: scheduledDate ? new Date(scheduledDate) : null
     });

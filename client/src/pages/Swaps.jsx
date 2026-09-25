@@ -32,7 +32,7 @@ const Swaps = () => {
       const response = await api.get('/swaps/my-swaps' + params);
       setSwaps(response.data);
     } catch (error) {
-      console.error('Error fetching swaps:', error);
+      console.error('Error fetching swaps:', (error instanceof Error ? error.name : "UnknownError"));
       toast.error('Failed to load swaps');
     } finally {
       setLoading(false);
@@ -49,7 +49,7 @@ const Swaps = () => {
       toast.success('Swap request accepted!');
       fetchSwaps();
     } catch (error) {
-      console.error('Error accepting swap:', error);
+      console.error('Error accepting swap:', (error instanceof Error ? error.name : "UnknownError"));
       toast.error('Failed to accept swap request');
     }
   }, [fetchSwaps]);
@@ -60,7 +60,7 @@ const Swaps = () => {
       toast.success('Swap request rejected');
       fetchSwaps();
     } catch (error) {
-      console.error('Error rejecting swap:', error);
+      console.error('Error rejecting swap:', (error instanceof Error ? error.name : "UnknownError"));
       toast.error('Failed to reject swap request');
     }
   }, [fetchSwaps]);
@@ -71,7 +71,7 @@ const Swaps = () => {
       toast.success('Swap marked as completed!');
       fetchSwaps();
     } catch (error) {
-      console.error('Error completing swap:', error);
+      console.error('Error completing swap:', (error instanceof Error ? error.name : "UnknownError"));
       toast.error('Failed to complete swap');
     }
   }, [fetchSwaps]);
@@ -82,7 +82,7 @@ const Swaps = () => {
       toast.success('Swap request cancelled');
       fetchSwaps();
     } catch (error) {
-      console.error('Error cancelling swap:', error);
+      console.error('Error cancelling swap:', (error instanceof Error ? error.name : "UnknownError"));
       toast.error('Failed to cancel swap request');
     }
   }, [fetchSwaps]);

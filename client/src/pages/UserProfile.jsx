@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import axios from 'axios';
 import toast from 'react-hot-toast';
 import { 
   MapPin, 
@@ -14,6 +13,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
+import api from '../config/api';
 
 const UserProfile = () => {
   const { id } = useParams();
@@ -40,10 +40,10 @@ const UserProfile = () => {
   const fetchUser = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`/api/users/${id}`);
+      const response = await api.get(`/users/${id}`);
       setUser(response.data);
     } catch (error) {
-      console.error('Error fetching user:', error);
+      console.error('Error fetching user:', (error instanceof Error ? error.name : "UnknownError"));
       toast.error('Failed to load user profile');
       navigate('/browse');
     } finally {
@@ -59,11 +59,11 @@ const UserProfile = () => {
         limit: reviewsPerPage,
         sort: reviewSort
       });
-      const response = await axios.get(`/api/users/${id}/reviews?${params}`);
+      const response = await api.get(`/users/${id}/reviews?${params}`);
       setAllReviews(response.data.reviews);
       setReviewsPagination(response.data.pagination);
     } catch (error) {
-      console.error('Error fetching reviews:', error);
+      console.error('Error fetching reviews:', (error instanceof Error ? error.name : "UnknownError"));
       toast.error('Failed to load reviews');
     } finally {
       setReviewsLoading(false);
@@ -113,7 +113,7 @@ const UserProfile = () => {
 
   const handleSwapRequest = async () => {
     try {
-      await axios.post('/api/swaps', {
+      await api.post('/swaps', {
         recipientId: user._id,
         ...swapData
       });
@@ -126,7 +126,7 @@ const UserProfile = () => {
         scheduledDate: ''
       });
     } catch (error) {
-      console.error('Error sending swap request:', error);
+      console.error('Error sending swap request:', (error instanceof Error ? error.name : "UnknownError"));
       toast.error(error.response?.data?.message || 'Failed to send swap request');
     }
   };

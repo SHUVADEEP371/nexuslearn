@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -53,7 +53,7 @@ router.get('/all', auth, requireAdmin, async (req, res) => {
 
     res.json(users);
   } catch (error) {
-    console.error('Get all users error:', error);
+    console.error('Get all users error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -121,7 +121,7 @@ router.get('/browse', async (req, res) => {
 
     res.json(usersWithRatings);
   } catch (error) {
-    console.error('Browse users error:', error);
+    console.error('Browse users error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -148,7 +148,7 @@ router.get('/search', async (req, res) => {
       .sort({ createdAt: -1 });
     res.json(users);
   } catch (error) {
-    console.error('Search users error:', error);
+    console.error('Search users error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -186,7 +186,7 @@ router.get('/:id', async (req, res) => {
       recentReviews
     });
   } catch (error) {
-    console.error('Get user error:', error);
+    console.error('Get user error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -241,7 +241,7 @@ router.get('/:id/reviews', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get user reviews error:', error);
+    console.error('Get user reviews error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -276,7 +276,7 @@ router.put('/profile', auth, [
 
     res.json(user);
   } catch (error) {
-    console.error('Update profile error:', error);
+    console.error('Update profile error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -298,7 +298,7 @@ router.post('/profile-photo', auth, upload.single('photo'), async (req, res) => 
 
     res.json({ user, photoUrl });
   } catch (error) {
-    console.error('Upload photo error:', error);
+    console.error('Upload photo error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -327,7 +327,7 @@ router.post('/skills-offered', auth, [
     await user.save();
     res.json(user.skillsOffered);
   } catch (error) {
-    console.error('Add skill offered error:', error);
+    console.error('Add skill offered error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -356,7 +356,7 @@ router.post('/skills-wanted', auth, [
     await user.save();
     res.json(user.skillsWanted);
   } catch (error) {
-    console.error('Add skill wanted error:', error);
+    console.error('Add skill wanted error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -372,7 +372,7 @@ router.delete('/skills-offered/:skillId', auth, async (req, res) => {
 
     res.json(user.skillsOffered);
   } catch (error) {
-    console.error('Remove skill offered error:', error);
+    console.error('Remove skill offered error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -388,7 +388,7 @@ router.delete('/skills-wanted/:skillId', auth, async (req, res) => {
 
     res.json(user.skillsWanted);
   } catch (error) {
-    console.error('Remove skill wanted error:', error);
+    console.error('Remove skill wanted error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -423,7 +423,7 @@ router.get('/admin/flagged-reviews', auth, requireAdmin, async (req, res) => {
 
     res.json(flaggedReviews);
   } catch (error) {
-    console.error('Get flagged reviews error:', error);
+    console.error('Get flagged reviews error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -465,7 +465,7 @@ router.post('/:userId/reviews/:reviewId/flag', auth, [
     await user.save();
     res.json({ message: 'Review flagged successfully' });
   } catch (error) {
-    console.error('Flag review error:', error);
+    console.error('Flag review error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -491,7 +491,7 @@ router.delete('/:userId/reviews/:reviewId', auth, requireAdmin, async (req, res)
 
     res.json({ message: 'Review deleted successfully' });
   } catch (error) {
-    console.error('Delete review error:', error);
+    console.error('Delete review error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -520,7 +520,7 @@ router.put('/:userId/reviews/:reviewId/unflag', auth, requireAdmin, async (req, 
     await user.save();
     res.json({ message: 'Review unflagged successfully' });
   } catch (error) {
-    console.error('Unflag review error:', error);
+    console.error('Unflag review error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -589,7 +589,7 @@ router.get('/:id/rating-analytics', async (req, res) => {
       }))
     });
   } catch (error) {
-    console.error('Get rating analytics error:', error);
+    console.error('Get rating analytics error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -647,7 +647,7 @@ router.get('/admin/rating-analytics', auth, requireAdmin, async (req, res) => {
         .limit(10)
     });
   } catch (error) {
-    console.error('Get platform analytics error:', error);
+    console.error('Get platform analytics error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -717,7 +717,7 @@ router.post('/:userId/reviews/:reviewId/vote', auth, [
       notHelpfulCount: review.notHelpfulCount
     });
   } catch (error) {
-    console.error('Vote on review error:', error);
+    console.error('Vote on review error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -743,7 +743,7 @@ router.get('/:userId/reviews/:reviewId/helpfulness', async (req, res) => {
       totalVotes: (review.helpfulCount || 0) + (review.notHelpfulCount || 0)
     });
   } catch (error) {
-    console.error('Get review helpfulness error:', error);
+    console.error('Get review helpfulness error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -793,7 +793,7 @@ router.post('/:userId/reviews/:reviewId/respond', auth, [
       response: review.response
     });
   } catch (error) {
-    console.error('Respond to review error:', error);
+    console.error('Respond to review error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -841,7 +841,7 @@ router.put('/:userId/reviews/:reviewId/respond', auth, [
       response: review.response
     });
   } catch (error) {
-    console.error('Update review response error:', error);
+    console.error('Update review response error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -867,7 +867,7 @@ router.delete('/:userId/reviews/:reviewId/respond', auth, requireAdmin, async (r
     await user.save();
     res.json({ message: 'Response deleted successfully' });
   } catch (error) {
-    console.error('Delete review response error:', error);
+    console.error('Delete review response error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -901,7 +901,7 @@ router.put('/:userId/reviews/:reviewId/verify', auth, requireAdmin, async (req, 
       verifiedDate: review.verifiedDate
     });
   } catch (error) {
-    console.error('Verify review error:', error);
+    console.error('Verify review error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -930,7 +930,7 @@ router.put('/:userId/reviews/:reviewId/unverify', auth, requireAdmin, async (req
     await user.save();
     res.json({ message: 'Review unverified successfully' });
   } catch (error) {
-    console.error('Unverify review error:', error);
+    console.error('Unverify review error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -989,7 +989,7 @@ router.get('/:id/reviews/export', auth, async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="${user.name}-reviews-${new Date().toISOString().split('T')[0]}.csv"`);
     res.send(csvContent);
   } catch (error) {
-    console.error('Export reviews error:', error);
+    console.error('Export reviews error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -1025,7 +1025,7 @@ router.get('/:id/reviews/verified', async (req, res) => {
       totalVerified: verifiedReviews.length
     });
   } catch (error) {
-    console.error('Get verified reviews error:', error);
+    console.error('Get verified reviews error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });

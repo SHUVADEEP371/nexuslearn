@@ -78,6 +78,7 @@ MONGODB_URI=mongodb://127.0.0.1:27017/nexuslearn?replicaSet=rs0
 JWT_SECRET=
 CORS_ORIGINS=http://localhost:3000
 COOKIE_SECURE=false
+AUTH_COOKIE_SAME_SITE=strict
 REDIS_URL=redis://localhost:6379
 GEMINI_API_KEY=
 GEMINI_MODEL=gemini-2.5-flash
@@ -176,6 +177,7 @@ Required and commonly used Render variables:
 | `JWT_SECRET` | Long, unique random value |
 | `CORS_ORIGINS` | Exact Vercel origin(s), comma-separated, no path components |
 | `COOKIE_SECURE` | `true` |
+| `AUTH_COOKIE_SAME_SITE` | `none` for Vercel/Render on separate sites; otherwise `strict` |
 | `REDIS_URL` | Upstash Redis TLS connection string beginning with `rediss://` |
 | `GEMINI_API_KEY` | Gemini API key, if AI features are enabled |
 | `GEMINI_MODEL` | `gemini-2.5-flash` |

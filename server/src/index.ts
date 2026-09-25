@@ -72,9 +72,10 @@ app.use('/api/ai', createAISessionRoutes(io));
 app.get('/api/health', (_req, res) => res.json({ status: 'OK', service: 'NexusLearn API', database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected' }));
 app.use((_req, res) => res.status(404).json({ message: 'Route not found' }));
 const errors: ErrorRequestHandler = (error, _req, res, _next) => {
-  const status = typeof error?.status === 'number' && error.status >= 400 && error.status < 600 ? error.status : 500;
+  const duplicateKey = error?.code === 11000;
+  const status = duplicateKey ? 409 : typeof error?.status === 'number' && error.status >= 400 && error.status < 600 ? error.status : 500;
   if (status >= 500) console.error('Unhandled API error', error instanceof Error ? error.name : 'UnknownError');
-  res.status(status).json({ message: status === 500 ? 'Something went wrong' : error.message });
+  res.status(status).json({ message: duplicateKey ? 'A record with this value already exists' : status === 500 ? 'Something went wrong' : error.message });
 };
 app.use(errors);
 

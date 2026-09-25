@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
-import axios from 'axios';
 import toast from 'react-hot-toast';
 import { Search, MapPin, Clock, Filter, X, Heart, Sparkles } from 'lucide-react';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -67,10 +66,10 @@ const Browse = () => {
       if (filters.location) params.append('location', filters.location);
       if (filters.availability) params.append('availability', filters.availability);
 
-      const response = await axios.get(`/api/users/browse?${params}`);
+      const response = await api.get(`/users/browse?${params}`);
       setUsers(response.data);
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error('Error fetching users:', (error instanceof Error ? error.name : "UnknownError"));
       toast.error('Failed to load users');
     } finally {
       setLoading(false);

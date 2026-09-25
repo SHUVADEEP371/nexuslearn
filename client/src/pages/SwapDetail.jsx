@@ -41,7 +41,7 @@ const SwapDetail = () => {
       const response = await api.get(`/swaps/${id}`);
       setSwap(response.data);
     } catch (error) {
-      console.error('Error fetching swap:', error);
+      console.error('Error fetching swap:', (error instanceof Error ? error.name : "UnknownError"));
       toast.error('Failed to load swap details');
       navigate('/swaps');
     } finally {
@@ -59,7 +59,7 @@ const SwapDetail = () => {
       toast.success('Swap request accepted!');
       fetchSwap();
     } catch (error) {
-      console.error('Error accepting swap:', error);
+      console.error('Error accepting swap:', (error instanceof Error ? error.name : "UnknownError"));
       toast.error('Failed to accept swap request');
     }
   };
@@ -70,7 +70,7 @@ const SwapDetail = () => {
       toast.success('Swap request rejected');
       fetchSwap();
     } catch (error) {
-      console.error('Error rejecting swap:', error);
+      console.error('Error rejecting swap:', (error instanceof Error ? error.name : "UnknownError"));
       toast.error('Failed to reject swap request');
     }
   };
@@ -81,7 +81,7 @@ const SwapDetail = () => {
       toast.success('Swap marked as completed!');
       fetchSwap();
     } catch (error) {
-      console.error('Error completing swap:', error);
+      console.error('Error completing swap:', (error instanceof Error ? error.name : "UnknownError"));
       toast.error('Failed to complete swap');
     }
   };
@@ -107,7 +107,7 @@ const SwapDetail = () => {
       toast.success('Swap request cancelled');
       fetchSwap();
     } catch (error) {
-      console.error('Error cancelling swap:', error);
+      console.error('Error cancelling swap:', (error instanceof Error ? error.name : "UnknownError"));
       toast.error('Failed to cancel swap request');
     }
   };
@@ -122,7 +122,7 @@ const SwapDetail = () => {
       // Notify Browse page to refresh users
       window.dispatchEvent(new Event('refresh-users'));
     } catch (error) {
-      console.error('Error submitting rating:', error);
+      console.error('Error submitting rating:', (error instanceof Error ? error.name : "UnknownError"));
       toast.error(error.response?.data?.message || 'Failed to submit rating');
     }
   };

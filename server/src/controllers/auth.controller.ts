@@ -31,12 +31,14 @@ function readRefreshCookie(value: unknown): string | null {
   return typeof value === 'string' && value.length > 0 && value.length <= 256 ? value : null;
 }
 function setRefreshCookie(res: Response, token: string): void {
-  const secure = secureCookie ? '; Secure' : '';
-  res.setHeader('Set-Cookie', `${refreshCookieName}=${encodeURIComponent(token)}; Path=/api/auth; HttpOnly; SameSite=Strict; Max-Age=${Math.floor(refreshDurationMs / 1000)}${secure}`);
+  const sameSite = process.env.AUTH_COOKIE_SAME_SITE?.toLowerCase() === 'none' ? 'None' : 'Strict';
+  const secure = secureCookie || sameSite === 'None' ? '; Secure' : '';
+  res.setHeader('Set-Cookie', `${refreshCookieName}=${encodeURIComponent(token)}; Path=/api/auth; HttpOnly; SameSite=${sameSite}; Max-Age=${Math.floor(refreshDurationMs / 1000)}${secure}`);
 }
 function clearRefreshCookie(res: Response): void {
-  const secure = secureCookie ? '; Secure' : '';
-  res.setHeader('Set-Cookie', `${refreshCookieName}=; Path=/api/auth; HttpOnly; SameSite=Strict; Max-Age=0${secure}`);
+  const sameSite = process.env.AUTH_COOKIE_SAME_SITE?.toLowerCase() === 'none' ? 'None' : 'Strict';
+  const secure = secureCookie || sameSite === 'None' ? '; Secure' : '';
+  res.setHeader('Set-Cookie', `${refreshCookieName}=; Path=/api/auth; HttpOnly; SameSite=${sameSite}; Max-Age=0${secure}`);
 }
 function mintAccessToken(userId: string, isAdmin = false): string {
   const secret = process.env.JWT_SECRET;
@@ -54,6 +56,7 @@ function validateOrigin(req: Parameters<RequestHandler>[0], res: Response): bool
 }
 
 authRouter.post('/register', credentialLimiter, wrap(async (req, res) => {
+  if (!validateOrigin(req, res)) return;
   const input = registrationSchema.safeParse(req.body);
   if (!input.success) { res.status(400).json({ message: 'Invalid registration details', issues: input.error.issues }); return; }
   const duplicate = await User.exists({ email: input.data.email });
@@ -67,6 +70,7 @@ authRouter.post('/register', credentialLimiter, wrap(async (req, res) => {
 }));
 
 authRouter.post('/login', credentialLimiter, wrap(async (req, res) => {
+  if (!validateOrigin(req, res)) return;
   const input = credentialsSchema.safeParse(req.body);
   if (!input.success) { res.status(400).json({ message: 'Invalid credentials' }); return; }
   if (input.data.email === process.env.ADMIN_ID && input.data.password === process.env.ADMIN_PASS && process.env.ADMIN_ID && process.env.ADMIN_PASS) {
@@ -124,6 +128,7 @@ authRouter.post('/refresh', wrap(async (req, res) => {
 }));
 
 authRouter.post('/logout', wrap(async (req, res) => {
+  if (!validateOrigin(req, res)) return;
   const rawToken = readRefreshCookie((req as typeof req & { cookies?: Record<string, unknown> }).cookies?.[refreshCookieName]);
   if (rawToken) await RefreshToken.updateOne({ tokenHash: hashToken(rawToken), revokedAt: { $exists: false } }, { $set: { revokedAt: new Date() } });
   clearRefreshCookie(res);

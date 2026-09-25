@@ -74,7 +74,7 @@ const Profile = () => {
       setEditing(false);
       toast.success('Profile updated successfully!');
     } catch (error) {
-      console.error('Error updating profile:', error);
+      console.error('Error updating profile:', (error instanceof Error ? error.name : "UnknownError"));
       toast.error('Failed to update profile');
     } finally {
       setLoading(false);
@@ -89,7 +89,7 @@ const Profile = () => {
       setShowAddSkillOffered(false);
       toast.success('Skill added successfully!');
     } catch (error) {
-      console.error('Error adding skill:', error);
+      console.error('Error adding skill:', (error instanceof Error ? error.name : "UnknownError"));
       toast.error(error.response?.data?.message || 'Failed to add skill');
     }
   };
@@ -102,7 +102,7 @@ const Profile = () => {
       setShowAddSkillWanted(false);
       toast.success('Skill added successfully!');
     } catch (error) {
-      console.error('Error adding skill:', error);
+      console.error('Error adding skill:', (error instanceof Error ? error.name : "UnknownError"));
       toast.error(error.response?.data?.message || 'Failed to add skill');
     }
   };
@@ -113,7 +113,7 @@ const Profile = () => {
       updateUser({ ...user, skillsOffered: response.data });
       toast.success('Skill removed successfully!');
     } catch (error) {
-      console.error('Error removing skill:', error);
+      console.error('Error removing skill:', (error instanceof Error ? error.name : "UnknownError"));
       toast.error('Failed to remove skill');
     }
   };
@@ -124,7 +124,7 @@ const Profile = () => {
       updateUser({ ...user, skillsWanted: response.data });
       toast.success('Skill removed successfully!');
     } catch (error) {
-      console.error('Error removing skill:', error);
+      console.error('Error removing skill:', (error instanceof Error ? error.name : "UnknownError"));
       toast.error('Failed to remove skill');
     }
   };

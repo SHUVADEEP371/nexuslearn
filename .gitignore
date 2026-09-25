@@ -13,7 +13,13 @@ uploads/
 # Environment & Secrets
 .env
 .env.*
+.env.local
+.env.development
+.env.production
 *.env
+**/.env.local
+**/.env.development
+**/.env.production
 server/.env
 client/.env
 client/.env.*
@@ -45,7 +51,12 @@ build/
 mongo-data/
 redis-data/
 *.dump
+*.bson
 *.rdb
+*.sqlite
+*.sqlite3
+*.sql
+seed-dump*
 
 # Logs & System
 *.log

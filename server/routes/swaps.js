@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const { body, validationResult } = require('express-validator');
 const Swap = require('../models/Swap');
 const User = require('../models/User');
@@ -81,7 +82,7 @@ router.post('/', auth, [
 
     res.status(201).json(swap);
   } catch (error) {
-    console.error('Create swap error:', error);
+    console.error('Create swap error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -108,7 +109,7 @@ router.get('/my-swaps', auth, async (req, res) => {
 
     res.json(swaps);
   } catch (error) {
-    console.error('Get my swaps error:', error);
+    console.error('Get my swaps error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -132,7 +133,7 @@ router.get('/:id', auth, async (req, res) => {
 
     res.json(swap);
   } catch (error) {
-    console.error('Get swap error:', error);
+    console.error('Get swap error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -163,7 +164,7 @@ router.put('/:id/accept', auth, async (req, res) => {
 
     res.json(swap);
   } catch (error) {
-    console.error('Accept swap error:', error);
+    console.error('Accept swap error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -194,46 +195,48 @@ router.put('/:id/reject', auth, async (req, res) => {
 
     res.json(swap);
   } catch (error) {
-    console.error('Reject swap error:', error);
+    console.error('Reject swap error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });
 
 // Complete swap
 router.put('/:id/complete', auth, async (req, res) => {
+  let transaction;
+  let swap = null;
+  let failure = null;
   try {
-    const swap = await Swap.findById(req.params.id);
+    transaction = await mongoose.startSession();
+    await transaction.withTransaction(async () => {
+      const current = await Swap.findById(req.params.id).session(transaction);
+      if (!current) { failure = { status: 404, message: 'Swap not found' }; return; }
+      const userId = req.user._id.toString();
+      if (current.requester.toString() !== userId && current.recipient.toString() !== userId) {
+        failure = { status: 403, message: 'Not authorized to complete this swap' }; return;
+      }
+      if (current.status !== 'accepted') { failure = { status: 409, message: 'Swap must be accepted before completion' }; return; }
 
-    if (!swap) {
-      return res.status(404).json({ message: 'Swap not found' });
-    }
-
-    // Check if user is involved in the swap
-    if (swap.requester.toString() !== req.user._id.toString() && 
-        swap.recipient.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Not authorized to complete this swap' });
-    }
-
-    if (swap.status !== 'accepted') {
-      return res.status(400).json({ message: 'Swap must be accepted before completion' });
-    }
-
-    swap.status = 'completed';
-    swap.completedDate = new Date();
-    await swap.save();
-
-    // Increment swapsCompleted for both users
-    await User.findByIdAndUpdate(swap.requester, { $inc: { swapsCompleted: 1 } });
-    await User.findByIdAndUpdate(swap.recipient, { $inc: { swapsCompleted: 1 } });
+      current.status = 'completed';
+      current.completedDate = new Date();
+      await current.save({ session: transaction });
+      await User.updateMany(
+        { _id: { $in: [current.requester, current.recipient] } },
+        { $inc: { swapsCompleted: 1 } },
+        { session: transaction },
+      );
+      swap = current;
+    });
+    if (failure) { res.status(failure.status).json({ message: failure.message }); return; }
+    if (!swap) { res.status(409).json({ message: 'Swap could not be completed; reload and retry' }); return; }
 
     await swap.populate('requester', 'name profilePhoto');
     await swap.populate('recipient', 'name profilePhoto');
 
     res.json(swap);
   } catch (error) {
-    console.error('Complete swap error:', error);
+    console.error('Complete swap error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
-  }
+  } finally { if (transaction) await transaction.endSession(); }
 });
 
 // Cancel swap (only by requester if pending)
@@ -262,7 +265,7 @@ router.put('/:id/cancel', auth, async (req, res) => {
 
     res.json(swap);
   } catch (error) {
-    console.error('Cancel swap error:', error);
+    console.error('Cancel swap error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -333,7 +336,7 @@ router.post('/:id/rate', auth, [
 
     res.json(swap);
   } catch (error) {
-    console.error('Rate swap error:', error);
+    console.error('Rate swap error:', (error instanceof Error ? error.name : "UnknownError"));
     res.status(500).json({ message: 'Server error' });
   }
 });

@@ -1,0 +1,23 @@
+# Environment secrets (keep the sanitized example file tracked)
+.env
+.env.*
+!.env.example
+
+# Dependencies and build output
+node_modules/
+dist/
+build/
+
+# Runtime logs and local databases/backups
+*.log
+*.dump
+*.bson
+*.rdb
+*.sqlite
+*.sqlite3
+*.sql
+seed-dump*
+
+# OS files
+.DS_Store
+Thumbs.db

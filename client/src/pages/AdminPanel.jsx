@@ -32,7 +32,7 @@ const AdminPanel = () => {
           setLoading(false);
         })
         .catch(err => {
-          console.error('Failed to fetch users:', err);
+          console.error('Failed to fetch users:', (err instanceof Error ? err.name : "UnknownError"));
           setError('Failed to fetch users. Please check your admin permissions.');
           setLoading(false);
         });
@@ -56,7 +56,7 @@ const AdminPanel = () => {
         };
       }));
     } catch (err) {
-      console.error('Failed to reject skill:', err);
+      console.error('Failed to reject skill:', (err instanceof Error ? err.name : "UnknownError"));
       setError('Failed to reject skill. Please try again.');
     }
   };

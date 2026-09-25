@@ -240,9 +240,10 @@ userSchema.methods.getPublicProfile = function() {
 
 // Add virtuals for average rating and count
 userSchema.virtual('ratingAverage').get(function() {
-  if (!this.ratings || this.ratings.length === 0) return 0;
-  const sum = this.ratings.reduce((acc, r) => acc + r.rating, 0);
-  return sum / this.ratings.length;
+  const count = this.ratings?.length ?? 0;
+  if (count === 0) return 0;
+  const sum = this.ratings?.reduce((acc, rating) => acc + rating.rating, 0) ?? 0;
+  return sum / count;
 });
 
 userSchema.set('toObject', { virtuals: true });

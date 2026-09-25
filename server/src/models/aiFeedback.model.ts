@@ -29,5 +29,4 @@ const aiFeedbackSchema = new Schema<AIFeedbackRecord>({
   generatedAt: Date,
 }, { timestamps: true, strict: 'throw', optimisticConcurrency: true });
 
-aiFeedbackSchema.index({ sessionId: 1 }, { unique: true });
 export const AIFeedback = (models.AIFeedback as Model<AIFeedbackRecord> | undefined) || model<AIFeedbackRecord>('AIFeedback', aiFeedbackSchema);

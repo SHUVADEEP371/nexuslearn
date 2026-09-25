@@ -12,16 +12,24 @@ function createRedisClient(): Redis | null {
   }
 
   const options: RedisOptions = {
+    family: 4,
     lazyConnect: true,
     enableOfflineQueue: false,
-    maxRetriesPerRequest: 1,
+    maxRetriesPerRequest: 3,
     commandTimeout: 2_000,
-    retryStrategy: (attempt) => Math.min(attempt * 250, 3_000),
+    retryStrategy: (attempt) => attempt > 5 ? null : Math.min(attempt * 250, 3_000),
+    ...(parsedUrl.protocol === 'rediss:' ? {
+      tls: {
+        servername: parsedUrl.hostname,
+        // Keep certificate verification enabled to prevent TLS interception.
+        rejectUnauthorized: true,
+      },
+    } : {}),
   };
   const client = new Redis(redisUrl, options);
   client.on('error', (error: Error) => console.error('Redis connection error', error.name));
   return client;
 }
 
-/** ioredis parses `rediss://` and negotiates TLS automatically. */
+/** Use IPv4 explicitly; configure TLS SNI for managed Redis hosts. */
 export const redisClient = createRedisClient();

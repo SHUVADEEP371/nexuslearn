@@ -5,7 +5,8 @@
   "main": "dist/index.js",
   "scripts": {
     "start": "node dist/index.js",
-    "dev": "tsx watch src/index.ts",
+    "dev": "node scripts/dev-node.mjs",
+    "dev:node": "node scripts/dev-node.mjs",
     "build": "tsc",
     "migrate:database": "node scripts/copy-database-forward.js"
   },

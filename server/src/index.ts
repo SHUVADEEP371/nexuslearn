@@ -81,7 +81,14 @@ app.use(errors);
 async function start(): Promise<void> {
   if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET must be configured');
   if (!process.env.MONGODB_URI) throw new Error('MONGODB_URI must be configured');
-  await mongoose.connect(process.env.MONGODB_URI);
+  try {
+    // MongoDB's driver parses percent-encoded username/password components.
+    // Pass the URI through unchanged; decoding it here would corrupt credentials.
+    await mongoose.connect(process.env.MONGODB_URI.trim());
+  } catch (error) {
+    logMongoConnectionFailure(error);
+    throw error;
+  }
 
   if (process.env.REDIS_URL) {
     if (!redisClient) throw new Error('Redis client could not be initialized');
@@ -101,6 +108,41 @@ async function start(): Promise<void> {
   await new Promise<void>((resolve) => httpServer.listen(port, '0.0.0.0', resolve));
   console.log(`NexusLearn API listening on port ${port}`);
 }
+
+function logMongoConnectionFailure(error: unknown): void {
+  const failure = error instanceof Error ? error : new Error(String(error));
+  const nested = failure.cause instanceof Error ? failure.cause : undefined;
+  const failureDetails = failure as Error & { code?: string | number; errorResponse?: { code?: string | number } };
+  const nestedDetails = nested as (Error & { code?: string | number; errorResponse?: { code?: string | number } }) | undefined;
+  const code = failureDetails.errorResponse?.code
+    || nestedDetails?.errorResponse?.code
+    || nestedDetails?.code
+    || failureDetails.code;
+  const message = `${failure.message} ${nested?.message || ''}`;
+  console.error('MongoDB connection failed:', failure.name, code || 'no error code');
+  if (Number(code) === 8000) {
+    console.error('MongoDB authentication failed (MongoServerError 8000). Check the database username, password, and database-user permissions. Percent-encode reserved credential characters in MONGODB_URI (for example, @ as %40); do not decode the URI before passing it to Mongoose.');
+  }
+  if (code === 'ENOTFOUND' || /querySrv\s+ENOTFOUND|querySrv ETIMEOUT/i.test(message)) {
+    console.error('MongoDB SRV DNS lookup failed. Check local DNS/network access, try a trusted DNS resolver such as Google DNS (8.8.8.8), or use a standard mongodb:// URI listing all three replica-set seed hosts and the replicaSet option.');
+  }
+}
+
+let mongoConnectedOnce = false;
+mongoose.connection.on('connected', () => {
+  mongoConnectedOnce = true;
+  console.info('MongoDB connection established.');
+});
+mongoose.connection.on('disconnected', () => {
+  if (mongoConnectedOnce) console.warn('MongoDB connection lost; Mongoose will attempt to reconnect.');
+  else console.warn('MongoDB is disconnected during initial startup.');
+});
+mongoose.connection.on('reconnected', () => {
+  console.info('MongoDB connection re-established.');
+});
+mongoose.connection.on('error', (error: Error & { code?: number }) => {
+  if (error.code === 8000) logMongoConnectionFailure(error);
+});
 
 async function shutdown(signal: string): Promise<void> {
   return shutdownWithExitCode(signal, 0);

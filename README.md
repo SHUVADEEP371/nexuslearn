@@ -14,12 +14,24 @@ NexusLearn helps people teach skills, find learning partners, schedule sessions,
 ![Google Gemini AI](https://img.shields.io/badge/Google-Gemini%202.5%20Flash-8E75B2?logo=googlegemini&logoColor=white)
 ![Socket.IO](https://img.shields.io/badge/Socket.IO-4-010101?logo=socketdotio&logoColor=white)
 
-**Live app (Vercel):** Not deployed or configured in this repository.
+## Live Deployments
 
-**API health (Render):** Not deployed or configured in this repository. When deployed, use the public API `/health` endpoint.
+### Frontend (Vercel)
+
+- **Primary production:** [https://nexuslearn-omega.vercel.app](https://nexuslearn-omega.vercel.app)
+- **Branch previews:**
+  - [https://nexuslearn-git-main-shuvadeep.vercel.app](https://nexuslearn-git-main-shuvadeep.vercel.app)
+  - [https://nexuslearn-lscue6r52-shuvadeep.vercel.app](https://nexuslearn-lscue6r52-shuvadeep.vercel.app)
+
+### Backend (Render, Docker container)
+
+- **Base URL:** [https://nexuslearn-api-9jm4.onrender.com](https://nexuslearn-api-9jm4.onrender.com)
+- **API root:** [https://nexuslearn-api-9jm4.onrender.com/api](https://nexuslearn-api-9jm4.onrender.com/api)
+- **Health check:** [https://nexuslearn-api-9jm4.onrender.com/health](https://nexuslearn-api-9jm4.onrender.com/health)
 
 ## Contents
 
+- [Live deployments](#live-deployments)
 - [Features](#features)
 - [Architecture](#architecture)
 - [Requirements](#requirements)
@@ -31,6 +43,7 @@ NexusLearn helps people teach skills, find learning partners, schedule sessions,
 - [Security and operational notes](#security-and-operational-notes)
 - [Repository structure](#repository-structure)
 - [Known limitations](#known-limitations)
+- [Upcoming Features and Improvements](#upcoming-features-and-improvements)
 
 ## Features
 
@@ -92,7 +105,7 @@ ADMIN_ID=
 ADMIN_PASS=
 ```
 
-`MONGODB_URI` and `JWT_SECRET` are required by the API. Use a MongoDB replica-set URI for features that use transactions. `REDIS_URL` is optional for a single process; use a `rediss://` URL for TLS-enabled hosted Redis. AI, payment, TURN, and legacy admin settings are optional. Use long random production secrets and rotate credentials if exposed.
+`MONGODB_URI` and `JWT_SECRET` are required by the API. Use a MongoDB replica-set URI for features that use transactions. `REDIS_URL` is optional for a single process; use a `rediss://` URL for TLS-enabled hosted Redis. AI, payment, TURN, and legacy admin settings are optional. Use long random production secrets and rotate credentials if exposed. The production backend runs as a Docker container on Render. For the separate Vercel and Render domains, configure `COOKIE_SECURE=true` and `AUTH_COOKIE_SAME_SITE=none` on Render.
 
 ### Client: `client/.env.example` (copy to `.env.local`)
 
@@ -160,13 +173,12 @@ The default gateway uses local HTTP configuration. For HTTPS, configure the TLS 
 
 ### Render: API
 
-Create a Render **Web Service** connected to the repository:
+Create a Render **Web Service** connected to the repository and deploy it using the Docker runtime and `server/Dockerfile`:
 
-1. Set **Root Directory** to `server`.
-2. Set **Build Command** to `npm ci && npm run build`.
-3. Set **Start Command** to `npm start`.
-4. Set **Health Check Path** to `/health`.
-5. Add the environment variables below. Render supplies `PORT`; the API binds to it.
+1. Set the service runtime to **Docker** and set the Dockerfile path to `server/Dockerfile` with the repository root as the build context.
+2. The Dockerfile installs dependencies, compiles TypeScript, and starts the API with `npm start`.
+3. Set **Health Check Path** to `/health`.
+4. Add the environment variables below. Render supplies `PORT`; the API binds to it.
 
 Required and commonly used Render variables:
 
@@ -175,12 +187,14 @@ Required and commonly used Render variables:
 | `NODE_ENV` | `production` |
 | `MONGODB_URI` | MongoDB Atlas connection string with replica-set support |
 | `JWT_SECRET` | Long, unique random value |
-| `CORS_ORIGINS` | Exact Vercel origin(s), comma-separated, no path components |
+| `CORS_ORIGINS` | `https://nexuslearn-omega.vercel.app,https://nexuslearn-git-main-shuvadeep.vercel.app,http://localhost:3000` |
 | `COOKIE_SECURE` | `true` |
-| `AUTH_COOKIE_SAME_SITE` | `none` for Vercel/Render on separate sites; otherwise `strict` |
+| `AUTH_COOKIE_SAME_SITE` | `none` |
 | `REDIS_URL` | Upstash Redis TLS connection string beginning with `rediss://` |
 | `GEMINI_API_KEY` | Gemini API key, if AI features are enabled |
 | `GEMINI_MODEL` | `gemini-2.5-flash` |
+
+The `nexuslearn-lscue6r52-shuvadeep.vercel.app` preview origin is not in the `CORS_ORIGINS` value above. Add `https://nexuslearn-lscue6r52-shuvadeep.vercel.app` to that value if this preview needs API access, then redeploy the backend.
 
 Add optional Razorpay credentials, `SESSION_PRICE_INR_PER_HOUR`, or TURN server credentials only when using those features. Do not copy secret values into the README or Vercel client settings.
 
@@ -195,8 +209,8 @@ Render can monitor `/health` using its health check path. For an external availa
 
    | Name | Value |
    | --- | --- |
-   | `VITE_API_URL` | The Render API origin followed by `/api` |
-   | `VITE_SOCKET_URL` | The Render API origin |
+   | `VITE_API_URL` | `https://nexuslearn-api-9jm4.onrender.com/api` |
+   | `VITE_SOCKET_URL` | `https://nexuslearn-api-9jm4.onrender.com` |
 
 5. Add each deployed Vercel site origin to Render's comma-separated `CORS_ORIGINS` and redeploy the API after changing it.
 
@@ -259,4 +273,16 @@ Session Socket.IO rooms persist chat messages and shared notes, broadcast note r
 - External Google/Outlook calendar synchronization is not implemented. Session `.ics` export is available.
 - WebRTC uses STUN by default; reliable connectivity across restrictive networks requires a TURN service.
 - The collaboration workspace provides persistent chat and shared notes; a separate shared whiteboard is not implemented.
-- Deployment URLs are not configured in this repository. Add the deployed Vercel and Render links above after publishing the services.
+- The production and branch preview URLs are listed in [Live Deployments](#live-deployments). Keep the Render CORS allow-list synchronized with any Vercel deployment that needs API access.
+
+## Upcoming Features and Improvements
+
+- Real-Time Session Start Pop-Up System
+- Mobile Number SMS Verification
+- Embedded AI Chatbot for Technical Skill Guidance
+- Admin Dashboard for Role-Based Management
+- Calendar-Based Mentor Availability Booking
+- Real-Time Socket.IO Notifications
+- Collaborative Code Editor for Live Sessions
+- Escrow-Based Dispute Resolution Workflow
+- Automated Skill Verification Badges
